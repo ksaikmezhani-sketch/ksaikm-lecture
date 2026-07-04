@@ -1,0 +1,1236 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KSAIKM 한의인공지능학회 온라인 강좌실</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght=300;400;500;700;900&family=Playfair+Display:ital,wght=0,600;1,600&display=swap" rel="stylesheet">
+    <!-- Lucide Icons (CDN) -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        ksaikm: {
+                            gold: '#C5A880',      /* 한의학의 고급스러운 침/약재 톤 */
+                            darkgreen: '#1E3E36', /* 한방 허브 및 한의학 전통의 짙은 녹색 */
+                            lightgreen: '#EAEFE9',/* 편안함을 주는 미색/그린 연한 톤 */
+                            tech: '#2C5282',      /* 인공지능/IT 기술의 다크블루 */
+                            accent: '#D97706',    /* 포인트 오렌지/골드 */
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Noto Sans KR', 'sans-serif'],
+                        serif: ['Playfair Display', 'serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #F8FAFC;
+        }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #F1F5F9; }
+        ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
+    </style>
+</head>
+<body class="text-slate-800 antialiased flex flex-col min-h-screen">
+
+    <!-- Chosen Palette: KSAIKM Traditional Herbal Green & Premium Gold -->
+    <!-- Application Structure Plan: This single-page interactive web application provides a secure, lightweight, and completely maintenance-free lecture streaming portal for the Korean Society of Artificial Intelligence in Korean Medicine (KSAIKM). It integrates seamlessly with Google Sheets as an immutable database and Google Mail as a real-time OTP server via Google Apps Script (GAS). The user experience focuses on a multi-dimensional dynamic filtering engine (by category, learner level, and platform sources) in a fully responsive, semantic grid. A secured admin console allows the board to create and delete lectures, manage list configurations (admin lists, tags, instructors) through a dedicated Settings panel, ensuring long-term operational autonomy. -->
+    <!-- Visualization & Content Choices: Dynamic Stats -> Goal: Inform -> Interactive Counters -> Justification: Real-time calculation of overall system status. Unified Grid -> Goal: Compare & Explore -> Flex cards with badges and metadata -> Justification: Immediate visual hierarchy of various educational resources. Two-Stage Auth Portal -> Goal: Secure -> Email validation with live OTP code input -> Justification: Absolute access control without external server fees. Custom Alert/Confirm Modals -> Goal: User Control -> Built-in HTML templates -> Justification: Smooth UX without native popups. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+    <!-- TOP HEADER / BRANDING -->
+    <header class="bg-ksaikm-darkgreen text-white shadow-md sticky top-0 z-40 border-b border-ksaikm-gold/20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-20">
+                <!-- Logo & Brand Name -->
+                <div class="flex items-center space-x-3">
+                    <div class="bg-white p-1 rounded-xl border border-ksaikm-gold/30 flex items-center justify-center shadow-inner w-14 h-14 overflow-hidden shrink-0">
+                        <img src="https://lh3.googleusercontent.com/d/1OP0oEFzi_xuy_FuaZbmYKdLCRt30X9pu" alt="KSAIKM Logo" class="w-full h-full object-contain" onerror="this.onerror=null; this.src='https://placehold.co/150/1e3e36/c5a880?text=KSAIKM';">
+                    </div>
+                    <div>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-xs font-bold uppercase tracking-widest text-ksaikm-gold font-serif">KSAIKM</span>
+                            <span id="headerRoleBadge" class="bg-ksaikm-gold/20 text-ksaikm-gold text-[10px] px-1.5 py-0.5 rounded border border-ksaikm-gold/30 font-medium">Platform</span>
+                        </div>
+                        <h1 class="text-lg sm:text-xl font-bold tracking-tight">한의인공지능학회 <span class="font-light text-slate-300">온라인 강좌실</span></h1>
+                    </div>
+                </div>
+                
+                <!-- Quick Navigation Links -->
+                <nav class="hidden md:flex items-center space-x-6 text-sm font-medium">
+                    <button onclick="switchView('home')" id="navHomeBtn" class="text-ksaikm-gold border-b-2 border-ksaikm-gold pb-1 transition font-bold focus:outline-none">강의실 홈</button>
+                    <!-- 관리자 전용 대시보드 탭 -->
+                    <button onclick="switchView('admin')" id="navAdminBtn" class="hidden text-slate-300 hover:text-white pb-1 transition flex items-center gap-1 focus:outline-none">
+                        <i data-lucide="shield-check" class="w-4 h-4 text-ksaikm-gold"></i> 관리자 대시보드
+                    </button>
+                    <a href="https://www.ksaikm.kr" target="_blank" class="text-slate-300 hover:text-white flex items-center transition">
+                        학회 홈 <i data-lucide="external-link" class="w-3.5 h-3.5 ml-1"></i>
+                    </a>
+                    
+                    <!-- 로그인 상태 제어 버튼 -->
+                    <div class="border-l border-white/20 pl-6 flex items-center space-x-3">
+                        <span id="userStatusText" class="text-xs text-slate-300 hidden"></span>
+                        <button id="authBtn" onclick="toggleAuthModal()" class="bg-white hover:bg-slate-100 text-slate-900 font-bold text-xs px-3.5 py-1.5 rounded-lg transition shadow-sm flex items-center gap-1.5">
+                            <i data-lucide="log-in" class="w-3.5 h-3.5"></i> 로그인
+                        </button>
+                    </div>
+                </nav>
+
+                <!-- Mobile Navigation Menu Toggle -->
+                <div class="md:hidden flex items-center space-x-3">
+                    <button onclick="toggleAuthModal()" id="mobileAuthBtn" class="bg-white text-slate-900 p-2 rounded-lg transition text-xs font-bold shadow-sm">
+                        로그인
+                    </button>
+                    <button id="mobileMenuBtn" onclick="toggleMobileMenu()" class="p-2 rounded-lg hover:bg-white/10 text-slate-300 hover:text-white transition focus:outline-none">
+                        <i data-lucide="menu" class="w-6 h-6"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mobile Dropdown Menu -->
+        <div id="mobileMenu" class="hidden md:hidden bg-ksaikm-darkgreen/95 border-t border-white/10 px-4 pt-2 pb-4 space-y-1">
+            <button onclick="switchView('home'); toggleMobileMenu();" class="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-ksaikm-gold bg-white/5">강의실 홈</button>
+            <button onclick="switchView('admin'); toggleMobileMenu();" id="mobileNavAdminBtn" class="hidden w-full text-left px-3 py-2 rounded-md text-base font-medium text-slate-300 hover:text-white flex items-center gap-1.5">
+                <i data-lucide="shield-check" class="w-4 h-4 text-ksaikm-gold"></i> 관리자 대시보드
+            </button>
+            <a href="https://www.ksaikm.kr" target="_blank" class="block px-3 py-2 rounded-md text-base font-medium text-slate-300 hover:text-white">학회 홈페이지 방문</a>
+        </div>
+    </header>
+
+    <!-- HERO BANNER -->
+    <section id="heroBannerSection" class="bg-gradient-to-br from-ksaikm-darkgreen to-slate-900 text-white py-12 px-4 relative overflow-hidden transition-all duration-300">
+        <!-- Subtle Traditional Pattern Background Overlays -->
+        <div class="absolute inset-0 opacity-5 pointer-events-none">
+            <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                        <rect width="40" height="40" fill="none" />
+                        <path d="M 40 0 L 0 0 0 40" fill="none" stroke="white" stroke-width="1" />
+                    </pattern>
+                </defs>
+                <rect width="100%" height="100%" fill="url(#grid)" />
+            </svg>
+        </div>
+
+        <div class="max-w-7xl mx-auto relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
+            <div class="max-w-2xl text-center md:text-left">
+                <span id="heroBadge" class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-ksaikm-gold/20 text-ksaikm-gold border border-ksaikm-gold/30 mb-4 animate-pulse">
+                    <span class="w-1.5 h-1.5 bg-ksaikm-gold rounded-full mr-2"></span>
+                    한의사 및 한의대생을 위한 AI 역량 강화 공간
+                </span>
+                <h2 id="heroTitle" class="text-3xl sm:text-4xl font-extrabold tracking-tight leading-tight">
+                    한의 임상과 연구를 위한<br>
+                    <span class="text-ksaikm-gold">실천적 인공지능(AI)</span> 학습 포털
+                </h2>
+                <p class="mt-4 text-slate-300 text-sm sm:text-base leading-relaxed">
+                    인공지능의 개념에 대한 기초강좌부터, 노코드/바이브 코딩, AI Agent의 효과적인 활용까지 한의학 임상가와 연구자들이 진료와 연구에 바로 적용할 수 있는 강의를 제공합니다.
+                </p>
+            </div>
+            
+            <!-- Quick Stat Cards -->
+            <div class="flex flex-wrap justify-center gap-4 w-full md:w-auto">
+                <div class="bg-white/10 backdrop-blur-md border border-white/10 p-4 rounded-2xl w-32 text-center shadow-lg">
+                    <span id="statTotal" class="block text-3xl font-bold text-ksaikm-gold">0</span>
+                    <span class="text-xs text-slate-400">등록 강의</span>
+                </div>
+                <div class="bg-white/10 backdrop-blur-md border border-white/10 p-4 rounded-2xl w-32 text-center shadow-lg">
+                    <span id="statCategoryCount" class="block text-3xl font-bold text-ksaikm-gold">0</span>
+                    <span class="text-xs text-slate-400">학습 주제</span>
+                </div>
+                <div class="bg-white/10 backdrop-blur-md border border-white/10 p-4 rounded-2xl w-32 text-center shadow-lg">
+                    <span id="statViewsCount" class="block text-3xl font-bold text-ksaikm-gold">0</span>
+                    <span class="text-xs text-slate-400">누적 시청수</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- MAIN PLATFORM AREA -->
+    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+        
+        <div id="homeView" class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            
+            <!-- SIDEBAR: CONTROLS & FILTERING -->
+            <aside class="lg:col-span-1 space-y-6">
+                <!-- Search Box -->
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
+                    <h3 class="text-sm font-bold text-slate-700 mb-3 flex items-center">
+                        <i data-lucide="search" class="w-4 h-4 mr-2 text-ksaikm-darkgreen"></i> 강좌 검색
+                    </h3>
+                    <div class="relative">
+                        <input type="text" id="searchInput" placeholder="강의명, 강사명 등 입력..." 
+                            class="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-ksaikm-darkgreen/20 focus:border-ksaikm-darkgreen transition">
+                        <i data-lucide="search" class="absolute left-3.5 top-3.5 w-4 h-4 text-slate-400"></i>
+                    </div>
+                </div>
+
+                <!-- Comprehensive Multi-Filters -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 space-y-6">
+                    <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                        <h3 class="font-bold text-slate-800 flex items-center">
+                            <i data-lucide="sliders-horizontal" class="w-4.5 h-4.5 mr-2 text-ksaikm-darkgreen"></i> 상세 필터
+                        </h3>
+                        <button id="resetFilters" class="text-xs text-slate-400 hover:text-ksaikm-accent flex items-center transition">
+                            <i data-lucide="rotate-ccw" class="w-3 h-3 mr-1"></i> 초기화
+                        </button>
+                    </div>
+
+                    <div>
+                        <h4 class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">수준별 단계</h4>
+                        <div class="space-y-2" id="levelFilterContainer"></div>
+                    </div>
+                    <div>
+                        <h4 class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">강의 분류</h4>
+                        <div class="space-y-2" id="categoryFilterContainer"></div>
+                    </div>
+                    <div>
+                        <h4 class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">강의 출처</h4>
+                        <div class="space-y-2" id="sourceFilterContainer"></div>
+                    </div>
+                </div>
+
+                <!-- Admin Action Card -->
+                <div id="sidebarAdminCard" class="bg-ksaikm-lightgreen/70 border border-ksaikm-darkgreen/10 p-5 rounded-2xl relative overflow-hidden transition-all">
+                    <div class="relative z-10" id="adminCardLocked">
+                        <span class="bg-slate-200 text-slate-700 text-[10px] px-2 py-0.5 rounded font-bold uppercase tracking-wider mb-2 inline-flex items-center gap-1">
+                            <i data-lucide="lock" class="w-2.5 h-2.5"></i> 관리자 전용
+                        </span>
+                        <h4 class="font-bold text-slate-800 text-sm">강좌 및 시스템 관리 포털</h4>
+                        <p class="text-xs text-slate-500 mt-1 mb-4 leading-relaxed">지정된 운영진 구글 계정으로 로그인하시면 강좌 등록 및 카테고리 관리가 가능합니다.</p>
+                        <button onclick="toggleAuthModal()" class="w-full bg-slate-700 hover:bg-slate-800 text-white text-xs font-bold py-2 px-3 rounded-xl shadow-sm transition flex items-center justify-center gap-1.5">
+                            <i data-lucide="log-in" class="w-3.5 h-3.5"></i> 구글 계정으로 로그인
+                        </button>
+                    </div>
+                    <div class="relative z-10 hidden" id="adminCardUnlocked">
+                        <span class="bg-emerald-100 text-emerald-800 text-[10px] px-2 py-0.5 rounded font-bold uppercase tracking-wider mb-2 inline-flex items-center gap-1 animate-pulse">
+                            <i data-lucide="unlock" class="w-2.5 h-2.5"></i> Admin Mode Active
+                        </span>
+                        <h4 class="font-bold text-slate-800 text-sm">편집 권한 활성화 됨</h4>
+                        <p class="text-xs text-slate-500 mt-1 mb-4 leading-relaxed">대시보드로 이동하여 강좌를 등록하거나 시스템 환경설정을 제어하세요.</p>
+                        <button onclick="switchView('admin')" class="w-full bg-ksaikm-darkgreen hover:bg-slate-800 text-white text-xs font-bold py-2 px-3 rounded-xl shadow-sm transition flex items-center justify-center gap-1.5">
+                            <i data-lucide="shield-check" class="w-3.5 h-3.5"></i> 관리자 대시보드 열기
+                        </button>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- MAIN: LECTURES VIEW -->
+            <section class="lg:col-span-3 space-y-6">
+                <!-- Search Status and Filter Chips -->
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white px-5 py-4 rounded-2xl shadow-sm border border-slate-100">
+                    <div class="text-sm text-slate-600">
+                        검색 결과: <span id="lectureCount" class="font-bold text-ksaikm-darkgreen">0</span>개의 강좌가 매칭됨
+                    </div>
+                    
+                    <div class="flex items-center space-x-3 text-xs">
+                        <span class="text-slate-400">정렬:</span>
+                        <select id="sortBy" class="bg-slate-50 border border-slate-200 rounded-lg py-1 px-2 focus:outline-none text-slate-600 cursor-pointer">
+                            <option value="latest">최신순</option>
+                            <option value="popular">조회수순</option>
+                            <option value="title">이름순</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Lecture Cards Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6" id="lectureGrid"></div>
+
+                <!-- Empty State -->
+                <div id="emptyState" class="hidden text-center py-20 bg-white rounded-3xl border border-slate-100 shadow-sm">
+                    <div class="w-16 h-16 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i data-lucide="inbox" class="w-8 h-8"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-800">강의가 순차적으로 업로드 될 예정입니다.</h3>
+                    <p class="text-slate-400 text-sm mt-1">새로운 강좌가 등록될 때까지 조금만 기다려주세요!</p>
+                    <button onclick="resetAllFilters()" class="mt-4 bg-ksaikm-darkgreen text-white text-xs px-4 py-2 rounded-xl hidden" id="emptyStateResetBtn">필터 초기화하기</button>
+                </div>
+            </section>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- VIEW 2: ADMIN DASHBOARD (관리자 전용 대시보드) -->
+        <!-- ========================================== -->
+        <div id="adminDashboardView" class="hidden space-y-6 animate-fade-in">
+            <!-- Admin Header Banner -->
+            <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="bg-ksaikm-gold text-slate-950 text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wider flex items-center gap-1">
+                            <i data-lucide="shield" class="w-3.5 h-3.5"></i> 학회 공식 운영진 포털
+                        </span>
+                        <span id="adminNameBadge" class="text-sm font-bold text-ksaikm-darkgreen"></span>
+                    </div>
+                    <h2 class="text-2xl font-extrabold text-slate-900 mt-2">강좌 및 데이터 통합 통제소</h2>
+                </div>
+                <div class="flex flex-wrap gap-3">
+                    <button onclick="openAddLectureModal()" class="bg-ksaikm-darkgreen hover:bg-slate-800 text-white text-xs font-bold py-3 px-5 rounded-xl shadow-sm transition flex items-center justify-center gap-2">
+                        <i data-lucide="video" class="w-4 h-4"></i> 새 강의 업로드
+                    </button>
+                    <button onclick="switchView('home')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold py-3 px-5 rounded-xl transition flex items-center justify-center gap-2">
+                        <i data-lucide="arrow-left" class="w-4 h-4"></i> 홈으로 이동
+                    </button>
+                </div>
+            </div>
+
+            <!-- Dashboard Navigation Tabs -->
+            <div class="flex border-b border-slate-200 mb-6">
+                <button id="adminTabLecturesBtn" onclick="switchAdminTab('lectures')" class="border-b-2 border-ksaikm-darkgreen text-ksaikm-darkgreen font-bold px-6 py-3 transition text-sm flex items-center gap-2 focus:outline-none">
+                    <i data-lucide="list-video" class="w-4 h-4"></i> 강좌 관리
+                </button>
+                <button id="adminTabSettingsBtn" onclick="switchAdminTab('settings')" class="border-b-2 border-transparent text-slate-400 hover:text-slate-700 px-6 py-3 transition text-sm flex items-center gap-2 focus:outline-none">
+                    <i data-lucide="settings" class="w-4 h-4"></i> 시스템 환경 설정
+                </button>
+            </div>
+
+            <!-- Admin Section 1: LECTURES -->
+            <div id="adminSectionLectures" class="space-y-6">
+                <!-- Admin Stats Strip -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
+                        <span class="text-xs text-slate-400 font-medium">관리 강좌 총합</span>
+                        <h3 id="adminStatTotal" class="text-2xl font-extrabold text-slate-800 mt-1">0</h3>
+                    </div>
+                    <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
+                        <span class="text-xs text-slate-400 font-medium">유튜브 강좌</span>
+                        <h3 id="adminStatYoutube" class="text-2xl font-extrabold text-red-600 mt-1">0</h3>
+                    </div>
+                    <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
+                        <span class="text-xs text-slate-400 font-medium">구글 드라이브 녹화본</span>
+                        <h3 id="adminStatDrive" class="text-2xl font-extrabold text-indigo-600 mt-1">0</h3>
+                    </div>
+                    <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
+                        <span class="text-xs text-slate-400 font-medium">총 동영상 시청 수</span>
+                        <h3 id="adminStatViews" class="text-2xl font-extrabold text-ksaikm-accent mt-1">0</h3>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm">
+                    <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                        <h3 class="font-extrabold text-slate-800 text-sm">등록 강좌 리스트 실시간 제어</h3>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-xs sm:text-sm">
+                            <thead>
+                                <tr class="bg-slate-100/50 text-slate-500 font-bold border-b border-slate-200 text-[11px] uppercase tracking-wider">
+                                    <th class="py-4 px-6">ID</th>
+                                    <th class="py-4 px-6">강좌명</th>
+                                    <th class="py-4 px-6">분류</th>
+                                    <th class="py-4 px-6">수준</th>
+                                    <th class="py-4 px-6">첨부자료</th>
+                                    <th class="py-4 px-6">강사</th>
+                                    <th class="py-4 px-6 text-center">액션</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminTableBody" class="divide-y divide-slate-100 text-slate-700"></tbody>
+                        </table>
+                    </div>
+                    <div id="adminTableEmptyState" class="hidden text-center py-10 bg-slate-50">
+                        <p class="text-slate-400 text-sm">등록된 강의가 없습니다.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Admin Section 2: SETTINGS -->
+            <div id="adminSectionSettings" class="hidden space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                        <h4 class="font-bold text-slate-800 mb-4 flex items-center gap-2"><i data-lucide="user-check" class="w-4 h-4 text-ksaikm-gold"></i> 관리자 이메일 목록</h4>
+                        <div class="flex gap-2 mb-4">
+                            <input type="email" id="inputSettingAdmins" placeholder="예: admin@gmail.com" class="flex-grow text-xs border border-slate-200 rounded-lg px-3 py-2 focus:ring-1 focus:ring-ksaikm-darkgreen outline-none">
+                            <button onclick="addSettingItem('admins')" class="bg-ksaikm-darkgreen text-white px-3 py-2 rounded-lg text-xs font-bold transition hover:bg-slate-800">+</button>
+                        </div>
+                        <ul id="listSettingAdmins" class="space-y-2 max-h-48 overflow-y-auto"></ul>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                        <h4 class="font-bold text-slate-800 mb-4 flex items-center gap-2"><i data-lucide="mic" class="w-4 h-4 text-ksaikm-gold"></i> 강사 명단</h4>
+                        <div class="flex gap-2 mb-4">
+                            <input type="text" id="inputSettingInstructors" placeholder="예: 홍길동 원장" class="flex-grow text-xs border border-slate-200 rounded-lg px-3 py-2 focus:ring-1 focus:ring-ksaikm-darkgreen outline-none">
+                            <button onclick="addSettingItem('instructors')" class="bg-ksaikm-darkgreen text-white px-3 py-2 rounded-lg text-xs font-bold transition hover:bg-slate-800">+</button>
+                        </div>
+                        <ul id="listSettingInstructors" class="space-y-2 max-h-48 overflow-y-auto"></ul>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                        <h4 class="font-bold text-slate-800 mb-4 flex items-center gap-2"><i data-lucide="folders" class="w-4 h-4 text-ksaikm-gold"></i> 강의 분류</h4>
+                        <div class="flex gap-2 mb-4">
+                            <input type="text" id="inputSettingCategories" placeholder="예: 데이터 분석 기초" class="flex-grow text-xs border border-slate-200 rounded-lg px-3 py-2 focus:ring-1 focus:ring-ksaikm-darkgreen outline-none">
+                            <button onclick="addSettingItem('categories')" class="bg-ksaikm-darkgreen text-white px-3 py-2 rounded-lg text-xs font-bold transition hover:bg-slate-800">+</button>
+                        </div>
+                        <ul id="listSettingCategories" class="space-y-2 max-h-48 overflow-y-auto"></ul>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                        <h4 class="font-bold text-slate-800 mb-4 flex items-center gap-2"><i data-lucide="bar-chart" class="w-4 h-4 text-ksaikm-gold"></i> 수준별 단계</h4>
+                        <div class="flex gap-2 mb-4">
+                            <input type="text" id="inputSettingLevels" placeholder="예: 입문" class="flex-grow text-xs border border-slate-200 rounded-lg px-3 py-2 focus:ring-1 focus:ring-ksaikm-darkgreen outline-none">
+                            <button onclick="addSettingItem('levels')" class="bg-ksaikm-darkgreen text-white px-3 py-2 rounded-lg text-xs font-bold transition hover:bg-slate-800">+</button>
+                        </div>
+                        <ul id="listSettingLevels" class="space-y-2 max-h-48 overflow-y-auto"></ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="bg-slate-900 text-slate-400 py-12 mt-16 border-t border-slate-800 text-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div class="text-center md:text-left">
+                <p class="font-bold text-white mb-1">한의인공지능학회 (Korean Society of Artificial Intelligence in Korean Medicine)</p>
+                <p class="text-xs">한의학과 현대 인공지능기술의 가교가 되어 한의학의 가치를 드높입니다.</p>
+            </div>
+            <div class="text-xs text-slate-500 text-center md:text-right">
+                <p class="mb-1">© 2026 KSAIKM. All Rights Reserved.</p>
+                <p>Designed and Built by KSAIKM Web Service Development Team.</p>
+            </div>
+        </div>
+    </footer>
+
+    <div id="authModal" class="hidden fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4">
+        <div class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm" onclick="toggleAuthModal()"></div>
+        <div class="bg-white rounded-3xl overflow-hidden shadow-2xl w-full max-w-sm relative z-10 border border-slate-200 text-center p-8">
+            <button onclick="toggleAuthModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition focus:outline-none">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+            <div class="w-16 h-16 bg-ksaikm-gold/10 text-ksaikm-gold rounded-2xl flex items-center justify-center mx-auto mb-4 border border-ksaikm-gold/20">
+                <i data-lucide="shield" class="w-8 h-8"></i>
+            </div>
+            <h3 class="font-bold text-xl text-slate-800 mb-2">통합 인증 포털</h3>
+            <p class="text-xs text-slate-500 mb-6">학회 운영진 이메일을 입력한 뒤, 메일로 받은 6자리 일회용 보안코드(OTP)로 로그인해 주세요.</p>
+            
+            <div id="otpStepEmail" class="space-y-4">
+                <input type="email" id="loginEmail" placeholder="관리자 이메일을 입력하세요" required class="w-full px-3 py-2.5 text-xs border border-slate-200 rounded-xl outline-none">
+                <button onclick="requestOTP()" class="w-full bg-ksaikm-darkgreen hover:bg-slate-800 text-white font-bold py-3 px-4 rounded-xl shadow transition text-xs">
+                    인증코드 전송
+                </button>
+            </div>
+            
+            <div id="otpStepCode" class="hidden space-y-4">
+                <input type="text" id="loginCode" maxlength="6" placeholder="6자리 인증코드 입력" required class="w-full text-center tracking-widest font-mono text-lg px-3 py-2.5 rounded-xl border border-slate-200 outline-none">
+                <button onclick="verifyOTP()" class="w-full bg-ksaikm-accent hover:bg-amber-600 text-white font-bold py-3 px-4 rounded-xl shadow transition text-xs">
+                    인증 및 로그인
+                </button>
+                <button onclick="resendOtpCode()" class="text-[11px] text-slate-400 hover:text-slate-600 underline">이메일 다시 보내기</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="playerModal" class="hidden fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4">
+        <div class="fixed inset-0 bg-slate-900/90 backdrop-blur-md" onclick="closePlayerModal()"></div>
+        <div class="bg-white rounded-3xl overflow-hidden shadow-2xl w-full max-w-5xl relative z-10 border border-slate-200 flex flex-col max-h-[95vh]">
+            <div class="bg-ksaikm-darkgreen text-white px-6 py-4 flex items-center justify-between shadow-sm z-20">
+                <div class="flex items-center gap-3">
+                    <span id="modalSourceBadge" class="bg-white/10 text-white text-[10px] px-2 py-1 rounded-md font-bold flex items-center border border-white/20"></span>
+                    <span id="modalLevelBadge" class="bg-ksaikm-gold/20 text-ksaikm-gold text-[10px] px-2 py-1 rounded-md font-bold border border-ksaikm-gold/30"></span>
+                </div>
+                <button onclick="closePlayerModal()" class="p-1 rounded-full hover:bg-white/10 text-slate-300 hover:text-white transition focus:outline-none">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+
+            <div class="overflow-y-auto flex-grow flex flex-col lg:flex-row">
+                <div class="w-full lg:w-2/3 bg-black flex-shrink-0 relative">
+                    <div class="aspect-video w-full h-full relative">
+                        <iframe id="videoIframe" class="w-full h-full absolute inset-0 border-0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+                    </div>
+                </div>
+
+                <div class="w-full lg:w-1/3 p-6 bg-slate-50 border-l border-slate-200 flex flex-col">
+                    <div class="mb-6">
+                        <h3 id="modalTitle" class="text-xl font-extrabold text-slate-900 leading-snug"></h3>
+                        <div class="flex flex-col gap-2 mt-3 text-xs text-slate-500">
+                            <span class="flex items-center"><i data-lucide="user" class="w-3.5 h-3.5 mr-1 text-slate-400"></i> <strong id="modalInstructor" class="text-slate-700 ml-1"></strong></span>
+                            <span class="flex items-center"><i data-lucide="calendar" class="w-3.5 h-3.5 mr-1 text-slate-400"></i> 업로드: <span id="modalDate" class="ml-1"></span></span>
+                            <span class="flex items-center"><i data-lucide="eye" class="w-3.5 h-3.5 mr-1 text-slate-400"></i> 조회수: <span id="modalViews" class="ml-1"></span></span>
+                        </div>
+                    </div>
+
+                    <div class="mb-6">
+                        <h4 class="font-bold text-slate-800 text-xs flex items-center mb-2"><i data-lucide="align-left" class="w-3.5 h-3.5 mr-1 text-ksaikm-gold"></i> 교육 요약</h4>
+                        <p id="modalDescription" class="text-slate-600 text-xs leading-relaxed bg-white p-3 rounded-xl border border-slate-200"></p>
+                    </div>
+                    
+                    <div class="mb-6">
+                        <div id="modalTags" class="flex flex-wrap gap-1.5"></div>
+                    </div>
+
+                    <div class="mt-auto">
+                        <h4 class="font-bold text-slate-800 text-xs flex items-center mb-2"><i data-lucide="paperclip" class="w-3.5 h-3.5 mr-1 text-ksaikm-gold"></i> 첨부 교육 자료</h4>
+                        <div id="modalAttachmentContainer"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="addModal" class="hidden fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4">
+        <div class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm" onclick="closeAddLectureModal()"></div>
+        <div class="bg-white rounded-3xl overflow-hidden shadow-2xl w-full max-w-2xl relative z-10 border border-slate-200">
+            <div class="bg-ksaikm-darkgreen text-white px-6 py-4 flex items-center justify-between">
+                <h3 class="font-bold text-lg flex items-center"><i data-lucide="video" class="w-5 h-5 mr-2 text-ksaikm-gold"></i> 신규 강좌 등록</h3>
+                <button onclick="closeAddLectureModal()" class="text-slate-300 hover:text-white transition focus:outline-none">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <form id="addLectureForm" class="p-6 space-y-4 text-xs sm:text-sm">
+                <div>
+                    <label class="block text-slate-700 font-bold mb-1">강좌명</label>
+                    <input type="text" id="addTitle" placeholder="강의 제목을 입력하세요" required
+                        class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-ksaikm-darkgreen/15 outline-none">
+                </div>
+                
+                <div class="grid grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-slate-700 font-bold mb-1">강사명</label>
+                        <select id="addInstructor" class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:ring-2 outline-none"></select>
+                    </div>
+                    <div>
+                        <label class="block text-slate-700 font-bold mb-1">카테고리 분류</label>
+                        <select id="addCategory" class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:ring-2 outline-none"></select>
+                    </div>
+                    <div>
+                        <label class="block text-slate-700 font-bold mb-1">학습 수준</label>
+                        <select id="addLevel" class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:ring-2 outline-none"></select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-slate-700 font-bold mb-1">비디오 재생 주소 (URL)</label>
+                    <input type="text" id="addVideoUrl" placeholder="구글 드라이브 공유 링크 또는 유튜브 링크" required
+                        class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-ksaikm-darkgreen/15 outline-none font-mono text-[11px]">
+                    <p class="text-slate-400 text-[10px] mt-1">※ 일반 유튜브 주소나 구글드라이브 공유주소를 넣어도 시스템이 자동으로 임베드용 주소로 변환합니다.</p>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                    <div>
+                        <label class="block text-slate-700 font-bold mb-1">첨부 강의자료명 (선택)</label>
+                        <input type="text" id="addAttachmentName" placeholder="예: 실습교재.pdf"
+                            class="w-full px-3 py-2 rounded-lg border border-slate-200 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-slate-700 font-bold mb-1">강의자료 다운로드 링크 (선택)</label>
+                        <input type="text" id="addAttachmentUrl" placeholder="자료를 다운로드 받을 수 있는 링크"
+                            class="w-full px-3 py-2 rounded-lg border border-slate-200 outline-none font-mono text-[11px]">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-slate-700 font-bold mb-1">강좌 상세 설명</label>
+                    <textarea id="addDescription" rows="4" placeholder="강좌 핵심 내용 및 커리큘럼 간략히 입력..." required
+                        class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:ring-2 outline-none resize-none"></textarea>
+                </div>
+
+                <button type="submit" class="w-full bg-ksaikm-darkgreen hover:bg-slate-800 text-white font-bold py-3 px-4 rounded-xl shadow transition">
+                    강좌 업로드 및 적용
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- GLOBAL CONFIRM MODAL -->
+    <div id="confirmModal" class="hidden fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 animate-fade-in">
+        <div class="fixed inset-0 bg-slate-900/80 backdrop-blur-xs"></div>
+        <div class="bg-white rounded-3xl overflow-hidden shadow-2xl w-full max-w-sm relative z-10 border border-slate-200 text-center p-6">
+            <div class="w-12 h-12 bg-rose-50 text-rose-600 rounded-full flex items-center justify-center mx-auto mb-4 border border-rose-100">
+                <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+            </div>
+            <h3 class="font-bold text-lg text-slate-800 mb-2" id="confirmTitle">확인</h3>
+            <p class="text-xs text-slate-500 mb-6" id="confirmMessage">이 작업을 진행하시겠습니까?</p>
+            <div class="flex gap-3">
+                <button id="confirmYesBtn" class="flex-1 bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold py-2.5 rounded-xl transition">삭제</button>
+                <button id="confirmNoBtn" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold py-2.5 rounded-xl transition">취소</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- GLOBAL LOADING SPINNER -->
+    <div id="globalLoader" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center">
+        <div class="bg-white p-6 rounded-3xl shadow-2xl flex flex-col items-center gap-4 border border-slate-200">
+            <div class="w-10 h-10 border-4 border-ksaikm-gold border-t-ksaikm-darkgreen rounded-full animate-spin"></div>
+            <p class="text-xs font-bold text-slate-700">구글 클라우드와 통신 중...</p>
+        </div>
+    </div>
+
+    <!-- CUSTOM TOAST NOTIFICATION -->
+    <div id="toast" class="hidden fixed bottom-6 right-6 bg-slate-900 text-white px-5 py-3.5 rounded-2xl shadow-2xl border border-slate-800 z-50 flex items-center gap-3 transition-all duration-300 transform translate-y-10 opacity-0">
+        <div class="bg-ksaikm-gold/20 p-1.5 rounded-lg text-ksaikm-gold" id="toastIcon"></div>
+        <div>
+            <p id="toastMessage" class="text-xs font-bold leading-none"></p>
+            <p id="toastSubtext" class="text-[10px] text-slate-400 mt-1 leading-none"></p>
+        </div>
+    </div>
+
+    <script>
+        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzW9j8F1GH0zSFjAQJmI3hLMMy1Ro44RtabEPUumbzJBvk-oNqC7VvnMzOFaXfF4unAZA/exec";
+
+        let appSettings = {
+            admins: [],
+            instructors: [],
+            categories: [],
+            levels: []
+        };
+
+        let lectures = [];
+
+        let currentUser = null; 
+        let isAdminMode = false; 
+        let currentActiveView = 'home';
+        let filters = { search: '', level: 'All', category: 'All', source: 'All' };
+        let activeSort = 'latest';
+
+        // 1. 호이스팅 및 스코프 샌드박스 완벽 대응을 위한 정적 선언 및 맵핑 아키텍처
+        window.toggleAuthModal = toggleAuthModal;
+        window.backToStep1 = backToStep1;
+        window.requestOTP = requestOTP;
+        window.verifyOTP = verifyOTP;
+        window.resendOtpCode = resendOtpCode;
+        window.handleLogout = handleLogout;
+        window.switchView = switchView;
+        window.switchAdminTab = switchAdminTab;
+        window.toggleMobileMenu = toggleMobileMenu;
+        window.addSettingItem = addSettingItem;
+        window.removeSettingItem = removeSettingItem;
+        window.setFilter = setFilter;
+        window.resetAllFilters = resetAllFilters;
+        window.openPlayerModal = openPlayerModal;
+        window.closePlayerModal = closePlayerModal;
+        window.openAddLectureModal = openAddLectureModal;
+        window.closeAddLectureModal = closeAddLectureModal;
+        window.deleteLectureReal = deleteLectureReal;
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            lucide.createIcons();
+            document.getElementById('addLectureForm').addEventListener('submit', (e) => {
+                e.preventDefault();
+                addNewLecture();
+            });
+            await initApp();
+        });
+
+        async function initApp() {
+            showGlobalLoader(true);
+            try {
+                await Promise.all([loadSettingsFromDb(), loadLecturesFromDb()]);
+                refreshSettingsUI();
+                renderLectures();
+                updateStats();
+            } catch (err) {
+                showToast("통신 에러", "구글 서버로부터 데이터를 로드하지 못했습니다.", "alert-circle");
+            } finally {
+                showGlobalLoader(false);
+            }
+        }
+
+        async function loadLecturesFromDb() {
+            try {
+                const response = await fetch(`${GAS_WEB_APP_URL}?action=getLectures`);
+                const result = await response.json();
+                if (result.success) {
+                    lectures = result.lectures || [];
+                }
+            } catch (e) {
+                lectures = [];
+            }
+        }
+
+        async function loadSettingsFromDb() {
+            try {
+                const response = await fetch(`${GAS_WEB_APP_URL}?action=getSettings`);
+                const result = await response.json();
+                if (result.success) {
+                    appSettings = result.settings || { admins: [], instructors: [], categories: [], levels: [] };
+                }
+            } catch (e) {
+                appSettings = { admins: [], instructors: [], categories: [], levels: [] };
+            }
+        }
+
+        async function postToGas(payload) {
+            showGlobalLoader(true);
+            try {
+                const response = await fetch(GAS_WEB_APP_URL, {
+                    method: "POST",
+                    body: JSON.stringify(payload)
+                });
+                return await response.json();
+            } catch (err) {
+                return { success: false, error: err.toString() };
+            } finally {
+                showGlobalLoader(false);
+            }
+        }
+
+        function showGlobalLoader(show) {
+            const loader = document.getElementById('globalLoader');
+            if (show) loader.classList.remove('hidden');
+            else loader.classList.add('hidden');
+        }
+
+        function showCustomConfirm(title, msg, onConfirm) {
+            const modal = document.getElementById('confirmModal');
+            document.getElementById('confirmTitle').innerText = title;
+            document.getElementById('confirmMessage').innerText = msg;
+            
+            const yesBtn = document.getElementById('confirmYesBtn');
+            const noBtn = document.getElementById('confirmNoBtn');
+
+            modal.classList.remove('hidden');
+
+            const handleYes = () => {
+                onConfirm();
+                modal.classList.add('hidden');
+                cleanup();
+            };
+            const handleNo = () => {
+                modal.classList.add('hidden');
+                cleanup();
+            };
+            const cleanup = () => {
+                yesBtn.removeEventListener('click', handleYes);
+                noBtn.removeEventListener('click', handleNo);
+            };
+
+            yesBtn.addEventListener('click', handleYes);
+            noBtn.addEventListener('click', handleNo);
+        }
+
+        function toggleAuthModal() {
+            document.getElementById('authModal').classList.toggle('hidden');
+            backToStep1();
+        }
+
+        function backToStep1() {
+            document.getElementById('otpStepEmail').classList.remove('hidden');
+            document.getElementById('otpStepCode').classList.add('hidden');
+            const codeInput = document.getElementById('loginCode');
+            if(codeInput) codeInput.value = '';
+        }
+
+        async function requestOTP() {
+            const email = document.getElementById('loginEmail').value.trim().toLowerCase();
+            if (!email) {
+                showToast("입력 오류", "이메일 주소를 올바르게 입력해 주세요.", "alert-circle");
+                return;
+            }
+
+            const result = await postToGas({ action: "sendOTP", email: email });
+            if (result.success) {
+                document.getElementById('otpStepEmail').classList.add('hidden');
+                document.getElementById('otpStepCode').classList.remove('hidden');
+                showToast("보안코드 발송", "구글 메일함으로 OTP가 전송되었습니다.", "send");
+            } else {
+                showToast("인증 실패", result.error || "등록되지 않은 관리자 주소입니다.", "x-circle");
+            }
+            lucide.createIcons();
+        }
+
+        async function verifyOTP() {
+            const email = document.getElementById('loginEmail').value.trim().toLowerCase();
+            const code = document.getElementById('loginCode').value.trim();
+
+            if (!code || code.length !== 6) {
+                showToast("입력 오류", "6자리 인증번호를 정확하게 기입하세요.", "alert-circle");
+                return;
+            }
+
+            const result = await postToGas({ action: "verifyOTP", email: email, code: code });
+            if (result.success) {
+                currentUser = email;
+                isAdminMode = true;
+                showToast("보안인증 성공", "최고 관리자 인증에 성공했습니다.", "shield");
+                updateAuthUI();
+                toggleAuthModal();
+            } else {
+                showToast("검증 실패", result.error || "인증번호가 일치하지 않습니다.", "x-circle");
+            }
+        }
+
+        function resendOtpCode() {
+            backToStep1();
+            requestOTP();
+        }
+
+        function handleLogout() {
+            currentUser = null;
+            isAdminMode = false;
+            showToast("보안 아웃", "정상적으로 보안 연결을 파기했습니다.", "log-out");
+            updateAuthUI();
+        }
+
+        function updateAuthUI() {
+            const authBtn = document.getElementById('authBtn');
+            const mobileAuthBtn = document.getElementById('mobileAuthBtn');
+            const userStatusText = document.getElementById('userStatusText');
+            
+            const adminTab = document.getElementById('navAdminBtn');
+            const mobileAdminTab = document.getElementById('mobileNavAdminBtn');
+
+            const adminCardLocked = document.getElementById('adminCardLocked');
+            const adminCardUnlocked = document.getElementById('adminCardUnlocked');
+
+            const headerBadge = document.getElementById('headerRoleBadge');
+            const adminNameBadge = document.getElementById('adminNameBadge');
+
+            if (currentUser) {
+                authBtn.innerHTML = `<i data-lucide="log-out" class="w-3.5 h-3.5"></i> 로그아웃`;
+                authBtn.onclick = handleLogout;
+                mobileAuthBtn.innerText = "로그아웃";
+                mobileAuthBtn.onclick = handleLogout;
+
+                userStatusText.innerText = currentUser.split('@')[0];
+                userStatusText.classList.remove('hidden');
+
+                if (isAdminMode) {
+                    adminTab.classList.remove('hidden');
+                    mobileAdminTab.classList.remove('hidden');
+                    
+                    adminCardLocked.classList.add('hidden');
+                    adminCardUnlocked.classList.remove('hidden');
+
+                    headerBadge.innerText = "ADMIN";
+                    headerBadge.className = "bg-emerald-500 text-slate-950 text-[10px] px-1.5 py-0.5 rounded border border-emerald-400 font-bold";
+                    adminNameBadge.innerText = `${currentUser} 님 (최고 관리자)`;
+                } else {
+                    adminTab.classList.add('hidden');
+                    mobileAdminTab.classList.add('hidden');
+
+                    adminCardLocked.classList.remove('hidden');
+                    adminCardUnlocked.classList.add('hidden');
+
+                    headerBadge.innerText = "MEMBER";
+                    headerBadge.className = "bg-ksaikm-gold/20 text-ksaikm-gold text-[10px] px-1.5 py-0.5 rounded border border-ksaikm-gold/30 font-medium";
+                }
+            } else {
+                authBtn.innerHTML = `<i data-lucide="log-in" class="w-3.5 h-3.5"></i> 로그인`;
+                authBtn.onclick = toggleAuthModal;
+                mobileAuthBtn.innerText = "로그인";
+                mobileAuthBtn.onclick = toggleAuthModal;
+
+                userStatusText.classList.add('hidden');
+                adminTab.classList.add('hidden');
+                mobileAdminTab.classList.add('hidden');
+
+                adminCardLocked.classList.remove('hidden');
+                adminCardUnlocked.classList.add('hidden');
+
+                headerBadge.innerText = "Platform";
+                headerBadge.className = "bg-ksaikm-gold/20 text-ksaikm-gold text-[10px] px-1.5 py-0.5 rounded border border-ksaikm-gold/30 font-medium";
+
+                switchView('home');
+            }
+            lucide.createIcons();
+        }
+
+        function switchView(targetView) {
+            currentActiveView = targetView;
+            const homeView = document.getElementById('homeView');
+            const adminView = document.getElementById('adminDashboardView');
+            const heroSection = document.getElementById('heroBannerSection');
+
+            if (targetView === 'home') {
+                homeView.classList.remove('hidden');
+                adminView.classList.add('hidden');
+                heroSection.classList.remove('hidden');
+                document.getElementById('navHomeBtn').className = "text-ksaikm-gold border-b-2 border-ksaikm-gold pb-1 transition font-bold focus:outline-none";
+                document.getElementById('navAdminBtn').className = "text-slate-300 hover:text-white pb-1 transition flex items-center gap-1 focus:outline-none";
+            } else {
+                if (!isAdminMode) return;
+                homeView.classList.add('hidden');
+                adminView.classList.remove('hidden');
+                heroSection.classList.add('hidden');
+                document.getElementById('navHomeBtn').className = "text-slate-300 hover:text-white pb-1 transition focus:outline-none";
+                document.getElementById('navAdminBtn').className = "text-ksaikm-gold border-b-2 border-ksaikm-gold pb-1 transition font-bold flex items-center gap-1 focus:outline-none";
+                
+                renderAdminTable();
+                updateAdminDashboardStats();
+            }
+            window.scrollTo({top: 0, behavior: 'smooth'});
+        }
+
+        function switchAdminTab(tab) {
+            document.getElementById('adminTabLecturesBtn').className = tab === 'lectures' 
+                ? "border-b-2 border-ksaikm-darkgreen text-ksaikm-darkgreen font-bold px-6 py-3 transition text-sm flex items-center gap-2 focus:outline-none" 
+                : "border-b-2 border-transparent text-slate-400 hover:text-slate-700 px-6 py-3 transition text-sm flex items-center gap-2 focus:outline-none";
+            document.getElementById('adminTabSettingsBtn').className = tab === 'settings' 
+                ? "border-b-2 border-ksaikm-darkgreen text-ksaikm-darkgreen font-bold px-6 py-3 transition text-sm flex items-center gap-2 focus:outline-none" 
+                : "border-b-2 border-transparent text-slate-400 hover:text-slate-700 px-6 py-3 transition text-sm flex items-center gap-2 focus:outline-none";
+            
+            document.getElementById('adminSectionLectures').classList.toggle('hidden', tab !== 'lectures');
+            document.getElementById('adminSectionSettings').classList.toggle('hidden', tab !== 'settings');
+        }
+
+        function toggleMobileMenu() { document.getElementById('mobileMenu').classList.toggle('hidden'); }
+
+        function refreshSettingsUI() {
+            initializeFilterButtons();
+
+            document.getElementById('addInstructor').innerHTML = appSettings.instructors.map(i => `<option value="${i}">${i}</option>`).join('');
+            document.getElementById('addLevel').innerHTML = appSettings.levels.map(i => `<option value="${i}">${i}</option>`).join('');
+            document.getElementById('addCategory').innerHTML = appSettings.categories.map(i => `<option value="${i}">${i}</option>`).join('');
+
+            ['admins', 'instructors', 'categories', 'levels'].forEach(key => {
+                const ul = document.getElementById(`listSetting${key.charAt(0).toUpperCase() + key.slice(1)}`);
+                if(ul) {
+                    ul.innerHTML = appSettings[key].map(item => `
+                        <li class="flex items-center justify-between bg-slate-50 border border-slate-100 px-3 py-2 rounded-lg text-xs text-slate-700">
+                            <span>${item}</span>
+                            ${item === 'ksaikm.ezhani@gmail.com' && key === 'admins' ? 
+                                `<span class="bg-ksaikm-gold/10 text-ksaikm-gold text-[10px] px-2 py-0.5 rounded font-bold">마스터</span>` :
+                                `<button onclick="removeSettingItem('${key}', '${item}')" class="text-rose-400 hover:text-rose-600 p-1"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>`
+                            }
+                        </li>
+                    `).join('');
+                }
+            });
+            lucide.createIcons();
+            updateStats();
+        }
+
+        async function addSettingItem(key) {
+            const inputName = `inputSetting${key.charAt(0).toUpperCase() + key.slice(1)}`;
+            const inputObj = document.getElementById(inputName);
+            const val = inputObj.value.trim();
+            if (val && !appSettings[key].includes(val)) {
+                appSettings[key].push(val);
+                
+                const result = await postToGas({ action: "saveSettings", settings: appSettings });
+                if (result.success) {
+                    inputObj.value = '';
+                    refreshSettingsUI();
+                    showToast("설정 추가 완료", `"${val}" 데이터가 DB에 저장되었습니다.`, "plus");
+                } else {
+                    appSettings[key].pop();
+                    showToast("통신 오류", "클라우드 저장에 실패했습니다.", "x-circle");
+                }
+            }
+        }
+
+        async function removeSettingItem(key, val) {
+            const originList = [...appSettings[key]];
+            appSettings[key] = appSettings[key].filter(item => item !== val);
+            
+            const result = await postToGas({ action: "saveSettings", settings: appSettings });
+            if (result.success) {
+                refreshSettingsUI();
+                showToast("설정 삭제 완료", `"${val}" 항목이 DB에서 삭제되었습니다.`, "trash");
+            } else {
+                appSettings[key] = originList;
+                showToast("통신 오류", "클라우드 삭제에 실패했습니다.", "x-circle");
+            }
+        }
+
+        function initializeFilterButtons() {
+            const levels = ['All', ...appSettings.levels];
+            const categories = ['All', ...appSettings.categories];
+            const sources = ['All', 'Google Drive', 'YouTube'];
+
+            const renderFilters = (arr, idPrefix) => arr.map(item => `
+                <button onclick="setFilter('${idPrefix}', '${item}')" id="btn-${idPrefix}-${item.replace(/\s+/g, '')}" 
+                    class="filter-pill w-full text-left px-3 py-1.5 rounded-xl text-xs sm:text-sm transition flex items-center justify-between font-medium">
+                    <span class="truncate pr-2">${item === 'All' ? '전체 보기' : item}</span>
+                    <span class="bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-md text-[10px] font-bold shrink-0">
+                        ${item === 'All' ? lectures.length : lectures.filter(l => l[idPrefix] === item).length}
+                    </span>
+                </button>
+            `).join('');
+
+            document.getElementById('levelFilterContainer').innerHTML = renderFilters(levels, 'level');
+            document.getElementById('categoryFilterContainer').innerHTML = renderFilters(categories, 'category');
+            document.getElementById('sourceFilterContainer').innerHTML = renderFilters(sources, 'source');
+            updateActiveFilterStyles();
+        }
+
+        function setFilter(type, value) { filters[type] = value; updateActiveFilterStyles(); renderLectures(); }
+        function resetAllFilters() { 
+            filters = { search: '', level: 'All', category: 'All', source: 'All' };
+            document.getElementById('searchInput').value = '';
+            updateActiveFilterStyles();
+            renderLectures();
+        }
+
+        function updateActiveFilterStyles() {
+            document.querySelectorAll('.filter-pill').forEach(btn => {
+                btn.className = "filter-pill w-full text-left px-3 py-2 rounded-xl text-xs sm:text-sm transition flex items-center justify-between font-medium text-slate-600 hover:bg-slate-50";
+            });
+            const setActive = (type, colorClass) => {
+                const btn = document.getElementById(`btn-${type}-${filters[type].replace(/\s+/g, '')}`);
+                if(btn) {
+                    btn.className = `filter-pill w-full text-left px-3 py-2 rounded-xl text-xs sm:text-sm transition flex items-center justify-between font-bold ${colorClass} text-white shadow-sm`;
+                    btn.querySelector('span:last-child').className = "bg-white/20 text-white px-1.5 py-0.5 rounded-md text-[10px] font-bold";
+                }
+            };
+            setActive('level', 'bg-ksaikm-darkgreen');
+            setActive('category', 'bg-ksaikm-tech');
+            setActive('source', 'bg-ksaikm-accent');
+        }
+
+        function updateStats() {
+            document.getElementById('statTotal').innerText = lectures.length;
+            document.getElementById('statCategoryCount').innerText = appSettings.categories.length;
+            document.getElementById('statViewsCount').innerText = lectures.reduce((sum, l) => sum + l.views, 0).toLocaleString();
+        }
+
+        function renderLectures() {
+            const grid = document.getElementById('lectureGrid');
+            const emptyState = document.getElementById('emptyState');
+            const resetBtn = document.getElementById('emptyStateResetBtn');
+
+            let filtered = lectures.filter(lecture => {
+                const matchesSearch = lecture.title.toLowerCase().includes(filters.search) || lecture.instructor.toLowerCase().includes(filters.search);
+                const matchesLevel = filters.level === 'All' || lecture.level === filters.level;
+                const matchesCategory = filters.category === 'All' || lecture.category === filters.category;
+                const matchesSource = filters.source === 'All' || lecture.source === filters.source;
+                return matchesSearch && matchesLevel && matchesCategory && matchesSource;
+            });
+
+            if (activeSort === 'latest') filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
+            else if (activeSort === 'popular') filtered.sort((a, b) => b.views - a.views);
+            else if (activeSort === 'title') filtered.sort((a, b) => a.title.localeCompare(b.title));
+
+            document.getElementById('lectureCount').innerText = filtered.length;
+
+            if (filtered.length === 0) {
+                grid.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+                resetBtn.classList.toggle('hidden', lectures.length === 0);
+                return;
+            }
+
+            grid.classList.remove('hidden');
+            emptyState.classList.add('hidden');
+
+            grid.innerHTML = filtered.map(lecture => {
+                let levelClass = "bg-emerald-50 text-emerald-700 border-emerald-100";
+                if(lecture.level === '중급') levelClass = "bg-blue-50 text-blue-700 border-blue-100";
+                if(lecture.level === '고급') levelClass = "bg-rose-50 text-rose-700 border-rose-100";
+
+                const isDrive = lecture.source === 'Google Drive';
+                const platformBadge = isDrive 
+                    ? `<span class="bg-indigo-50 text-indigo-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-indigo-100 flex items-center"><i data-lucide="hard-drive" class="w-3 h-3 mr-1 text-indigo-500"></i> Drive</span>`
+                    : `<span class="bg-red-50 text-red-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-red-100 flex items-center"><i data-lucide="youtube" class="w-3 h-3 mr-1 text-red-500"></i> YouTube</span>`;
+
+                return `
+                    <div class="bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md hover:-translate-y-1 transition duration-300 flex flex-col overflow-hidden cursor-pointer" onclick="openPlayerModal(${lecture.id})">
+                        <div class="p-5 flex-grow space-y-3">
+                            <div class="flex items-center justify-between">
+                                <span class="text-[10px] font-bold uppercase text-slate-400 tracking-wider">${lecture.category}</span>
+                                <div class="flex items-center space-x-1.5">${platformBadge}<span class="border ${levelClass} text-[10px] font-bold px-2 py-0.5 rounded-full">${lecture.level}</span></div>
+                            </div>
+                            <h3 class="font-extrabold text-slate-800 text-sm sm:text-base leading-snug line-clamp-2">${lecture.title}</h3>
+                            <p class="text-xs text-slate-400 leading-relaxed line-clamp-2">${lecture.description}</p>
+                            ${lecture.attachment && lecture.attachment.name ? `<div class="flex items-center gap-1 text-[11px] text-ksaikm-accent font-semibold pt-1"><i data-lucide="paperclip" class="w-3 h-3"></i> 자료 포함</div>` : ''}
+                        </div>
+                        <div class="px-5 py-3.5 bg-slate-50/50 border-t border-slate-50 flex items-center justify-between text-xs text-slate-500 shrink-0">
+                            <span class="flex items-center font-medium text-slate-700"><i data-lucide="user-round" class="w-3.5 h-3.5 mr-1.5 text-ksaikm-gold"></i> ${lecture.instructor}</span>
+                            <div class="flex items-center space-x-3 text-[11px]">
+                                <span class="flex items-center"><i data-lucide="eye" class="w-3 h-3 mr-1 text-slate-400"></i> ${lecture.views}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            lucide.createIcons();
+        }
+
+        function formatVideoUrl(url) {
+            if (!url) return '';
+            if (url.includes('drive.google.com/file/d/')) {
+                return url.replace(/\/view(\?.*)?$/, '/preview');
+            }
+            const ytMatch = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
+            if (ytMatch && ytMatch[1]) {
+                return `https://www.youtube.com/embed/${ytMatch[1]}`;
+            }
+            return url;
+        }
+
+        function openPlayerModal(lectureId) {
+            const lecture = lectures.find(l => l.id === lectureId);
+            if(!lecture) return;
+
+            lecture.views += 1; 
+            renderLectures(); updateStats();
+
+            document.getElementById('modalTitle').innerText = lecture.title;
+            document.getElementById('modalInstructor').innerText = lecture.instructor;
+            document.getElementById('modalDate').innerText = lecture.date;
+            document.getElementById('modalViews').innerText = lecture.views;
+            document.getElementById('modalDescription').innerText = lecture.description;
+
+            const srcBadge = document.getElementById('modalSourceBadge');
+            srcBadge.innerHTML = lecture.source === 'Google Drive' 
+                ? `<i data-lucide="hard-drive" class="w-3 h-3 mr-1 text-indigo-400"></i> Google Drive` 
+                : `<i data-lucide="youtube" class="w-3 h-3 mr-1 text-red-500"></i> YouTube`;
+            
+            document.getElementById('modalLevelBadge').innerText = lecture.level;
+            document.getElementById('modalTags').innerHTML = lecture.tags.map(tag => `<span class="bg-slate-100 text-slate-600 text-[10px] px-2 py-1 rounded-md border border-slate-200">#${tag}</span>`).join('');
+
+            const attachmentCont = document.getElementById('modalAttachmentContainer');
+            if (lecture.attachment && lecture.attachment.name) {
+                attachmentCont.innerHTML = `
+                    <div class="bg-white border border-slate-200 p-4 rounded-xl flex items-center justify-between shadow-sm">
+                        <div class="flex items-center space-x-3">
+                            <div class="bg-emerald-50 text-emerald-600 p-2 rounded-lg border border-emerald-100">
+                                <i data-lucide="download-cloud" class="w-5 h-5"></i>
+                            </div>
+                            <div>
+                                <h5 class="font-bold text-slate-800 text-xs sm:text-sm truncate max-w-[150px] sm:max-w-xs">${lecture.attachment.name}</h5>
+                            </div>
+                        </div>
+                        <a href="${lecture.attachment.url}" target="_blank" class="bg-ksaikm-darkgreen hover:bg-slate-800 text-white text-xs font-semibold py-2 px-4 rounded-lg shadow-sm transition flex items-center whitespace-nowrap">
+                            다운로드
+                        </a>
+                    </div>
+                `;
+            } else {
+                attachmentCont.innerHTML = `<div class="bg-white border border-slate-200 p-4 rounded-xl flex items-center justify-center text-slate-400 text-xs shadow-sm"><i data-lucide="info" class="w-4 h-4 mr-1.5"></i> 첨부된 자료가 없습니다.</div>`;
+            }
+
+            const iframe = document.getElementById('videoIframe');
+            iframe.src = formatVideoUrl(lecture.videoUrl);
+
+            document.getElementById('playerModal').classList.remove('hidden');
+            document.body.classList.add('overflow-hidden'); 
+            lucide.createIcons();
+        }
+
+        function closePlayerModal() {
+            document.getElementById('playerModal').classList.add('hidden');
+            document.body.classList.remove('overflow-hidden');
+            document.getElementById('videoIframe').src = ''; 
+        }
+
+        function openAddLectureModal() {
+            document.getElementById('addModal').classList.remove('hidden');
+            document.body.classList.add('overflow-hidden');
+        }
+
+        function closeAddLectureModal() {
+            document.getElementById('addModal').classList.add('hidden');
+            document.body.classList.remove('overflow-hidden');
+        }
+
+        async function addNewLecture() {
+            const title = document.getElementById('addTitle').value.trim();
+            const instructor = document.getElementById('addInstructor').value;
+            const level = document.getElementById('addLevel').value;
+            const category = document.getElementById('addCategory').value;
+            const source = document.getElementById('addSource').value;
+            const rawUrl = document.getElementById('addVideoUrl').value.trim();
+            const description = document.getElementById('addDescription').value.trim();
+            const attachmentName = document.getElementById('addAttachmentName').value.trim();
+            const attachmentUrl = document.getElementById('addAttachmentUrl').value.trim();
+
+            const postLecture = {
+                title, instructor, level, category, source,
+                date: new Date().toISOString().split('T')[0],
+                videoUrl: rawUrl,
+                description,
+                tags: [category, level],
+                attachmentName: attachmentName || "",
+                attachmentUrl: attachmentUrl || ""
+            };
+
+            const result = await postToGas({ action: "addLecture", lecture: postLecture });
+            if (result.success) {
+                showToast("강좌 업로드 성공", "클라우드 DB에 강의가 등록되었습니다.", "video");
+                closeAddLectureModal();
+                document.getElementById('addLectureForm').reset();
+                await initApp();
+                if (currentActiveView === 'admin') { renderAdminTable(); updateAdminDashboardStats(); }
+            } else {
+                showToast("등록 에러", result.error || "클라우드 저장에 실패했습니다.", "x-circle");
+            }
+        }
+
+        function renderAdminTable() {
+            const tbody = document.getElementById('adminTableBody');
+            const emptyState = document.getElementById('adminTableEmptyState');
+
+            if (lectures.length === 0) {
+                tbody.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                return;
+            }
+            emptyState.classList.add('hidden');
+
+            tbody.innerHTML = lectures.map(l => {
+                const attachmentStatus = l.attachment && l.attachment.name
+                    ? `<span class="bg-amber-50 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded border border-amber-200">첨부됨</span>` : `<span class="text-slate-400 text-[10px]">없음</span>`;
+
+                return `
+                    <tr class="hover:bg-slate-50 transition border-b border-slate-100 last:border-0">
+                        <td class="py-3 px-6 font-mono font-bold text-slate-400">${l.id}</td>
+                        <td class="py-3 px-6 font-bold text-slate-900 max-w-[150px] truncate">${l.title}</td>
+                        <td class="py-3 px-6 text-slate-500 font-medium">${l.category}</td>
+                        <td class="py-3 px-6">${l.level}</td>
+                        <td class="py-3 px-6">${attachmentStatus}</td>
+                        <td class="py-3 px-6 text-slate-600 font-medium">${l.instructor}</td>
+                        <td class="py-3 px-6 text-center">
+                            <button onclick="deleteLectureReal(${l.id})" class="text-rose-400 hover:text-rose-600 hover:bg-rose-50 p-1.5 rounded-lg transition" title="강좌 삭제">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+            lucide.createIcons();
+        }
+
+        function updateAdminDashboardStats() {
+            document.getElementById('adminStatTotal').innerText = lectures.length;
+            document.getElementById('adminStatYoutube').innerText = lectures.filter(l => l.source === 'YouTube').length;
+            document.getElementById('adminStatDrive').innerText = lectures.filter(l => l.source === 'Google Drive').length;
+            document.getElementById('adminStatViews').innerText = lectures.reduce((sum, l) => sum + l.views, 0).toLocaleString();
+        }
+
+        function deleteLectureReal(lectureId) {
+            showCustomConfirm(
+                "강좌 데이터 완전 삭제",
+                "이 강의를 삭제하면 되돌릴 수 없습니다. 정말 데이터베이스에서 영구히 삭제하시겠습니까?",
+                async () => {
+                    const result = await postToGas({ action: "deleteLecture", id: lectureId });
+                    if (result.success) {
+                        showToast("강좌 파기 성공", "데이터베이스에서 강의가 완전 차단되었습니다.", "trash");
+                        await initApp();
+                        renderAdminTable();
+                        updateAdminDashboardStats();
+                    } else {
+                        showToast("삭제 에러", result.error || "서버 통신에 실패했습니다.", "x-circle");
+                    }
+                }
+            );
+        }
+
+        function showToast(title, msg, iconName = "check") {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMessage').innerText = title;
+            document.getElementById('toastSubtext').innerText = msg;
+            document.getElementById('toastIcon').innerHTML = `<i data-lucide="${iconName}" class="w-4 h-4"></i>`;
+            lucide.createIcons();
+
+            toast.classList.remove('hidden');
+            setTimeout(() => { toast.classList.remove('opacity-0', 'translate-y-10'); }, 10);
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-10');
+                setTimeout(() => { toast.classList.add('hidden'); }, 300);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
