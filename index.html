@@ -253,13 +253,16 @@
                         검색 결과: <span id="lectureCount" class="font-bold text-ksaikm-darkgreen">0</span>개의 강의가 매칭됨
                     </div>
                     
-                    <div class="flex items-center space-x-3 text-xs">
+                    <div class="flex items-center space-x-2 text-xs">
                         <span class="text-slate-400">정렬:</span>
                         <select id="sortBy" class="bg-slate-50 border border-slate-200 rounded-lg py-1 px-2 focus:outline-none text-slate-600 cursor-pointer">
                             <option value="latest">최신순</option>
                             <option value="popular">조회수순</option>
                             <option value="title">이름순</option>
                         </select>
+                        <button id="sortDirectionBtn" onclick="toggleSortDirection()" title="정렬 방향 전환 (내림차순/오름차순)" class="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 transition text-slate-500 flex items-center justify-center">
+                            <i data-lucide="arrow-down-up" class="w-3.5 h-3.5"></i>
+                        </button>
                     </div>
                 </div>
 
@@ -616,6 +619,7 @@
         let currentActiveView = 'home';
         let filters = { search: '', level: 'All', category: 'All', source: 'All' };
         let activeSort = 'latest';
+        let sortDirection = 'desc';
 
         // 1. 호이스팅 및 스코프 샌드박스 완벽 대응을 위한 정적 선언 및 맵핑 아키텍처
         window.toggleAuthModal = toggleAuthModal;
@@ -636,12 +640,17 @@
         window.openAddLectureModal = openAddLectureModal;
         window.closeAddLectureModal = closeAddLectureModal;
         window.deleteLectureReal = deleteLectureReal;
+        window.toggleSortDirection = toggleSortDirection;
 
         window.addEventListener('DOMContentLoaded', async () => {
             lucide.createIcons();
             document.getElementById('addLectureForm').addEventListener('submit', (e) => {
                 e.preventDefault();
                 addNewLecture();
+            });
+            document.getElementById('sortBy').addEventListener('change', (e) => {
+                activeSort = e.target.value;
+                renderLectures();
             });
             await initApp();
         });
@@ -997,6 +1006,30 @@
             document.getElementById('statViewsCount').innerText = lectures.reduce((sum, l) => sum + l.views, 0).toLocaleString();
         }
 
+        function parseDateSafe(dateVal) {
+            const t = new Date(dateVal).getTime();
+            return isNaN(t) ? 0 : t;
+        }
+
+        function toggleSortDirection() {
+            sortDirection = sortDirection === 'desc' ? 'asc' : 'desc';
+            updateSortOptionLabels();
+            const btn = document.getElementById('sortDirectionBtn');
+            if (btn) {
+                const icon = btn.querySelector('i');
+                if (icon) icon.style.transform = sortDirection === 'asc' ? 'scaleY(-1)' : 'none';
+            }
+            renderLectures();
+        }
+
+        function updateSortOptionLabels() {
+            const baseLabels = { latest: '최신순', popular: '조회수순', title: '이름순' };
+            Object.keys(baseLabels).forEach(key => {
+                const opt = document.querySelector(`#sortBy option[value="${key}"]`);
+                if (opt) opt.textContent = sortDirection === 'desc' ? baseLabels[key] : `${baseLabels[key]} (역순)`;
+            });
+        }
+
         function renderLectures() {
             const grid = document.getElementById('lectureGrid');
             const emptyState = document.getElementById('emptyState');
@@ -1010,9 +1043,15 @@
                 return matchesSearch && matchesLevel && matchesCategory && matchesSource;
             });
 
-            if (activeSort === 'latest') filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
-            else if (activeSort === 'popular') filtered.sort((a, b) => b.views - a.views);
-            else if (activeSort === 'title') filtered.sort((a, b) => a.title.localeCompare(b.title));
+            let comparator;
+            if (activeSort === 'latest') comparator = (a, b) => parseDateSafe(b.date) - parseDateSafe(a.date);
+            else if (activeSort === 'popular') comparator = (a, b) => b.views - a.views;
+            else comparator = (a, b) => a.title.localeCompare(b.title);
+            if (sortDirection === 'asc') {
+                const base = comparator;
+                comparator = (a, b) => -base(a, b);
+            }
+            filtered.sort(comparator);
 
             document.getElementById('lectureCount').innerText = filtered.length;
 
